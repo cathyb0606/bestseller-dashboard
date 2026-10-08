@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>도서 데이터 대시보드</title>
+<!-- 차트 라이브러리만 CDN에서 불러오며, 데이터와 나머지 코드는 모두 이 파일에 포함합니다. -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+<style>
+:root{--surface:#FDFDFF;--ink:#1E2433;--secondary:#505A74;--muted:#737D96;--grid:#E2E6F0;--blue:#1751D0}
+*{box-sizing:border-box}body{margin:0;background:#f3f5fa;color:var(--ink);font-family:system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-size:14px}main{max-width:1440px;margin:auto;padding:40px 32px}/* 제목 영역에 연한 초록색 배경을 적용합니다. */
+header{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:28px;background:#E8F5EC;border:1px solid #B9DCC4;border-radius:16px;padding:26px 28px}.eyebrow{font-size:11px;letter-spacing:2px;color:var(--secondary);font-weight:700}h1{font-size:32px;letter-spacing:-1px;margin:8px 0 10px}header p{color:var(--secondary);margin:0;line-height:1.7}.badge{padding:9px 14px;border:1px solid var(--grid);border-radius:30px;background:var(--surface);white-space:nowrap}.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}.card{background:var(--surface);border:1px solid var(--grid);border-radius:16px;padding:24px}.kpi-label{color:var(--secondary);font-size:13px}.kpi-value{font-size:32px;font-weight:750;letter-spacing:-1px;margin:12px 0 8px}.kpi-value small{font-size:15px;font-weight:500;margin-left:5px}.note{font-size:12px;color:var(--muted);line-height:1.6}.charts{display:grid;grid-template-columns:1.15fr 1fr;gap:20px;margin-bottom:24px}h2{font-size:17px;margin:0 0 8px}.chartbox{height:285px;position:relative;margin-top:22px}.donut-layout{display:grid;grid-template-columns:minmax(160px,1fr) minmax(180px,1fr);gap:20px;align-items:center}.legend{list-style:none;padding:0;margin:20px 0 0}.legend li{display:flex;align-items:center;gap:8px;margin:13px 0;font-size:12px}.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}.legend b{margin-left:auto;font-variant-numeric:tabular-nums}.chart-details{margin-top:14px;color:var(--secondary);font-size:12px}.chart-details summary{cursor:pointer}.chart-details p{line-height:1.8;margin:6px 0}.table-card{padding:0;overflow:hidden}.table-head{padding:24px;display:flex;align-items:center;justify-content:space-between;gap:20px}.table-head p{margin:6px 0 0;color:var(--secondary);font-size:12px}.search{width:350px;max-width:100%;padding:12px 14px;border:1px solid #CDD3E0;border-radius:9px;font:inherit;background:var(--surface);color:var(--ink)}.table-filters{display:flex;gap:10px;align-items:center;max-width:100%}.year-filter{padding:12px 14px;border:1px solid #CDD3E0;border-radius:9px;font:inherit;background:var(--surface);color:var(--ink);min-width:140px}.search:focus,.year-filter:focus{outline:2px solid var(--blue);outline-offset:2px}.table-scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;text-align:left;table-layout:fixed;min-width:880px}thead{background:#f5f7fb}th,td{padding:15px 16px;border-bottom:1px solid var(--grid);vertical-align:top;line-height:1.65}th{font-size:12px;color:var(--secondary)}th button{width:100%;text-align:inherit;border:0;background:none;color:inherit;font:inherit;font-weight:650;cursor:pointer;padding:0}th button:focus-visible{outline:2px solid var(--blue)}tbody tr:hover{background:#f5f8ff}td{font-size:13px;overflow-wrap:anywhere}td:nth-child(2){font-weight:600}td:nth-child(3){color:var(--secondary)}/* 가격과 연도는 오른쪽 정렬하고 숫자 폭을 일정하게 유지합니다. 가격 쉼표는 JS에서 적용합니다. */
+.number{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}.rank{text-align:center;color:var(--secondary)}.table-foot{padding:16px 24px;font-size:12px;color:var(--muted)}.empty{text-align:center;padding:40px;color:var(--secondary)}footer{margin-top:20px;color:var(--muted);font-size:12px;line-height:1.7}.error{padding:15px;background:#f5f7fb;border:1px solid var(--grid);border-radius:8px;margin-bottom:20px}
+@media(max-width:1050px){.charts{grid-template-columns:1fr}.chartbox{height:280px}.donut-layout{grid-template-columns:1fr 1fr}}@media(max-width:650px){main{padding:24px 16px}header{align-items:flex-start;padding:20px}.badge{display:none}h1{font-size:26px}.kpis{grid-template-columns:repeat(2,1fr);gap:12px}.card{padding:18px}.kpi-value{font-size:26px}.table-card{padding:0}.table-head{flex-direction:column;align-items:stretch;padding:18px}.table-filters{flex-wrap:wrap}.search{width:100%;flex:1 1 200px;min-width:0}.year-filter{flex:1 1 140px}.donut-layout{grid-template-columns:1fr}.legend{display:grid;grid-template-columns:1fr 1fr;gap:0 18px;margin:0}.chartbox{height:250px}}
+</style>
+</head>
+<body><main>
+<header><div><div class="eyebrow">BOOK DATA / OVERVIEW</div><h1>도서 데이터 대시보드</h1><p>가격 분포부터 출판사 구성까지, 도서 목록을 한눈에 살펴보세요.</p></div><span class="badge">제공 CSV 기준 · 50권</span></header>
+<!-- 요약 카드와 차트는 전체 데이터 기준이며, 검색과 출간연도 필터는 아래 표에만 적용합니다. -->
+<section class="kpis" aria-label="전체 도서 요약">
+<div class="card"><div class="kpi-label">전체 도서수</div><div class="kpi-value"><span id="total">—</span><small>권</small></div><div class="note">세트 도서도 CSV 1행을 1권으로 집계</div></div>
+<div class="card"><div class="kpi-label">평균 가격</div><div class="kpi-value"><span id="average">—</span><small>원</small></div><div class="note">전체 가격의 산술평균 · 원 단위 반올림</div></div>
+<div class="card"><div class="kpi-label">최고 가격</div><div class="kpi-value"><span id="maximum">—</span><small>원</small></div><div class="note">제공 목록의 가장 높은 가격</div></div>
+<div class="card"><div class="kpi-label">출판사 수</div><div class="kpi-value"><span id="publishers">—</span><small>개</small></div><div class="note">출판사명이 같은 항목을 중복 제거</div></div>
+</section>
+<div id="chartError" class="error" role="status" hidden>차트 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침해 주세요. 요약과 검색·정렬 표는 그대로 이용할 수 있습니다.</div>
+<section class="charts" aria-label="도서 통계 차트">
+<div class="card"><h2>가격대별 도서 수</h2><div class="note">전체 도서 · 가격 단위: 원 / 도서 수 단위: 권</div><div class="chartbox"><canvas id="priceChart" role="img" aria-label="전체 도서의 가격대별 도서 수 막대 차트"></canvas></div><details class="chart-details"><summary>가격대별 정확한 집계 보기</summary><p id="priceSummary"></p></details></div>
+<div class="card"><h2>출판사별 도서 수 · 상위 8개</h2><div class="note">동률이면 목록에 먼저 등장한 출판사 우선 · 기타 제외</div><div class="donut-layout"><div class="chartbox"><canvas id="publisherChart" role="img" aria-label="상위 8개 출판사의 도서 수 도넛 차트"></canvas></div><ul class="legend" id="publisherLegend" aria-label="출판사별 도서 수"></ul></div><div id="publisherSummary" class="chart-details"></div></div>
+</section>
+<section class="card table-card" aria-label="전체 도서 표">
+<div class="table-head"><div><h2>전체 도서 목록</h2><p id="resultCount" aria-live="polite"></p></div><div class="table-filters"><input class="search" id="search" type="search" placeholder="제목, 저자, 출판사 검색" aria-label="제목, 저자, 출판사 검색" autocomplete="off"><select id="yearFilter" class="year-filter" aria-label="출간연도로 표 필터링"><option value="">전체 출간연도</option></select></div></div>
+<div class="table-scroll"><table><colgroup><col style="width:6%"><col style="width:35%"><col style="width:27%"><col style="width:15%"><col style="width:8%"><col style="width:9%"></colgroup><thead><tr>
+<th scope="col" class="rank" data-key="rank" aria-sort="ascending"><button type="button">순위 <span>↑</span></button></th>
+<th scope="col" data-key="title" aria-sort="none"><button type="button">제목 <span>↕</span></button></th>
+<th scope="col" data-key="author" aria-sort="none"><button type="button">저자 <span>↕</span></button></th>
+<th scope="col" data-key="publisher" aria-sort="none"><button type="button">출판사 <span>↕</span></button></th>
+<th scope="col" class="number" data-key="year" aria-sort="none"><button type="button">출간연도 <span>↕</span></button></th>
+<th scope="col" class="number" data-key="price" aria-sort="none"><button type="button">가격(원) <span>↕</span></button></th>
+</tr></thead><tbody id="bookRows"></tbody></table></div><div class="table-foot">열 제목을 클릭하면 오름차순 / 내림차순으로 전환됩니다. 검색과 출간연도 필터는 함께 적용됩니다. 표만 필터링되며 위 통계는 전체 도서 기준입니다.</div>
+</section><footer>데이터: 사용자가 제공한 CSV 50행. 외부 데이터 요청 없이 HTML에 내장된 목록을 사용합니다.<br>차트는 Chart.js CDN을 사용하므로 인터넷 연결이 필요합니다.</footer>
+<noscript><p class="error">대시보드를 사용하려면 브라우저의 자바스크립트를 활성화해 주세요.</p></noscript>
+</main>
+<script>
+'use strict';
+// 원본 CSV의 50행을 자바스크립트 객체 배열로 직접 내장합니다.
+const DATA = [{"rank": 1, "title": "세네카, 오늘을 빼앗기고 있는 당신에게", "author": "루키우스 안나이우스 세네카, 하와이 대저택", "publisher": "논픽션", "year": 2026, "price": 16200}, {"rank": 2, "title": "그랬다고 적었다", "author": "김애란", "publisher": "문학동네", "year": 2026, "price": 15300}, {"rank": 3, "title": "한국사 이상현상 연구원", "author": "최인서", "publisher": "다이브", "year": 2026, "price": 19800}, {"rank": 4, "title": "싯다르타", "author": "헤르만 헤세, 박병덕", "publisher": "민음사", "year": 2002, "price": 7200}, {"rank": 5, "title": "백야 (먼슬리 클래식)", "author": "표도르 도스토옙스키, 박은정", "publisher": "문학동네", "year": 2026, "price": 13050}, {"rank": 6, "title": "카구라바치 11 (더블특전판)", "author": "호카조노 타케루", "publisher": "대원씨아이(만화)", "year": 2026, "price": 5850}, {"rank": 7, "title": "수족관", "author": "유래혁", "publisher": "포스터샵", "year": 2023, "price": 15930}, {"rank": 8, "title": "트렌드 코리아 2027", "author": "김난도, 전미영, 최지혜, 권정윤, 한다혜, 이혜원, 이수진, 전다현, 서유현, 이준영, 이향은, 김나은, 문지수", "publisher": "미래의창", "year": 2026, "price": 19800}, {"rank": 9, "title": "찌니주의보", "author": "정지아", "publisher": "창비", "year": 2026, "price": 15120}, {"rank": 10, "title": "서리꽃 세트 - 전2권 (초판 한정 케이스 + 조정래 작가노트)", "author": "조정래", "publisher": "해냄", "year": 2026, "price": 36000}, {"rank": 11, "title": "오뒷세이아", "author": "호메로스, 김헌", "publisher": "을유문화사", "year": 2026, "price": 22500}, {"rank": 12, "title": "호프 끝장", "author": "금동현, 김해솔, 박동수, 배은열, 신포도, 유유민, 이광호, 정미파, 한상희, 조일남, 윤아랑", "publisher": "디깅룸", "year": 2026, "price": 15120}, {"rank": 13, "title": "빵충 사육 준수 사항", "author": "김혜영", "publisher": "안전가옥", "year": 2026, "price": 15120}, {"rank": 14, "title": "오뒷세이아 (알라딘 리커버 특별판)", "author": "호메로스, 천병희", "publisher": "도서출판 숲", "year": 2015, "price": 29700}, {"rank": 15, "title": "모순", "author": "양귀자", "publisher": "쓰다", "year": 2013, "price": 11700}, {"rank": 16, "title": "테오", "author": "앨런 레비, 노지양", "publisher": "오팬하우스", "year": 2026, "price": 18900}, {"rank": 17, "title": "칵테일을 마시는 철학자들", "author": "세라 베이크웰, 조영", "publisher": "다산초당", "year": 2026, "price": 23400}, {"rank": 18, "title": "2026 큰별쌤 최태성의 별★별한국사 한국사능력검정시험 심화(1, 2, 3급) 상", "author": "최태성", "publisher": "이투스북", "year": 2025, "price": 17100}, {"rank": 19, "title": "신경 끄기의 기술 (한교동 에디션)", "author": "마크 맨슨, 한재호", "publisher": "갤리온", "year": 2026, "price": 17100}, {"rank": 20, "title": "기쁨에도 슬픔에도 아랑곳없이", "author": "박준", "publisher": "난다", "year": 2026, "price": 19800}, {"rank": 21, "title": "브람스를 좋아하세요...", "author": "프랑수아즈 사강, 김남주", "publisher": "민음사", "year": 2008, "price": 9000}, {"rank": 22, "title": "데미안", "author": "헤르만 헤세, 전영애", "publisher": "민음사", "year": 2000, "price": 7200}, {"rank": 23, "title": "안녕, 피터팬", "author": "전경철", "publisher": "이야기장수", "year": 2026, "price": 19800}, {"rank": 24, "title": "절창 (20만 부 기념 화이트 에디션)", "author": "구병모", "publisher": "문학동네", "year": 2025, "price": 16200}, {"rank": 25, "title": "2026 큰별쌤 최태성의 별★별한국사 한국사능력검정시험 심화(1, 2, 3급) 하", "author": "최태성", "publisher": "이투스북", "year": 2025, "price": 16650}, {"rank": 26, "title": "에그박사 19", "author": "에그박사 (원작), 박송이, 홍종현, 이승현 (감수)", "publisher": "미래엔아이세움", "year": 2026, "price": 15120}, {"rank": 27, "title": "브레인 악셀", "author": "이진우", "publisher": "바른뇌연구소", "year": 2026, "price": 19800}, {"rank": 28, "title": "노무현 평전", "author": "윤태영, 사람사는세상 노무현재단 (기획)", "publisher": "위즈덤하우스", "year": 2026, "price": 44550}, {"rank": 29, "title": "찰리 멍거 바이블 완결판", "author": "김재현, 이건", "publisher": "에프엔미디어", "year": 2026, "price": 27000}, {"rank": 30, "title": "오디세이아 (국내 유일 명화 104점 수록 완역본)", "author": "호메로스, 페테르 파울 루벤스, 박문재", "publisher": "현대지성", "year": 2025, "price": 24300}, {"rank": 31, "title": "사죠 리히토의 아버지와 그의 부하 상.하 세트 - 전2권", "author": "나카무라 아스미코", "publisher": "조은세상(북두)", "year": 2026, "price": 34200}, {"rank": 32, "title": "데뷔 못 하면 죽는 병 걸림 5부 초판 한정 굿즈박스 세트 - 전4권", "author": "백덕수", "publisher": "위시북스(KW북스)", "year": 2026, "price": 129600}, {"rank": 33, "title": "마음의 어휘력", "author": "조아란, 권희, 이정윤", "publisher": "페이지2(page2)", "year": 2026, "price": 15120}, {"rank": 34, "title": "눈 내리는 삼일포", "author": "김연수", "publisher": "문학동네", "year": 2026, "price": 16200}, {"rank": 35, "title": "문해내공", "author": "신종호, 김윤정", "publisher": "상상스퀘어", "year": 2026, "price": 22500}, {"rank": 36, "title": "타몬 군 지금 어느 쪽?! 14", "author": "시와스 유키, 최윤정", "publisher": "학산문화사(만화)", "year": 2026, "price": 6300}, {"rank": 37, "title": "니체의 초월자", "author": "프리드리히 니체, 김철", "publisher": "히읏", "year": 2025, "price": 15210}, {"rank": 38, "title": "ETS 토익 정기시험 기출문제집 1000 Vol. 5 Reading (리딩)", "author": "ETS", "publisher": "(주)YBM(와이비엠)", "year": 2025, "price": 19800}, {"rank": 39, "title": "처음 읽는 그리스 로마 신화 15", "author": "최설희, 한현동, 정수영 (구성)", "publisher": "미래엔아이세움", "year": 2026, "price": 15120}, {"rank": 40, "title": "코스모스 (100만 부 기념판)", "author": "칼 세이건, 홍승수", "publisher": "사이언스북스", "year": 2026, "price": 19800}, {"rank": 41, "title": "ETS 토익 정기시험 기출문제집 1000 Vol. 5 Listening (리스닝)", "author": "ETS", "publisher": "(주)YBM(와이비엠)", "year": 2025, "price": 19800}, {"rank": 42, "title": "처음 읽는 삼국지 5", "author": "이문열, 한현동 (원작), 윤종문 (구성)", "publisher": "미래엔아이세움", "year": 2026, "price": 15120}, {"rank": 43, "title": "이상한 지도", "author": "우케쓰, 김은모", "publisher": "리드비", "year": 2026, "price": 16920}, {"rank": 44, "title": "녹색 절벽의 신자들", "author": "조예은", "publisher": "오리지널스", "year": 2026, "price": 17100}, {"rank": 45, "title": "일리아스 (알라딘 리커버 특별판)", "author": "호메로스, 천병희", "publisher": "도서출판 숲", "year": 2015, "price": 34200}, {"rank": 46, "title": "김진순의 인생 레시피 1", "author": "김진순", "publisher": "길벗", "year": 2026, "price": 21600}, {"rank": 47, "title": "어제 뭐 먹었어? 25", "author": "요시나가 후미", "publisher": "삼양출판사(만화)", "year": 2026, "price": 5400}, {"rank": 48, "title": "투명한 나선", "author": "히가시노 게이고, 김선영", "publisher": "북다", "year": 2026, "price": 19800}, {"rank": 49, "title": "아르고스", "author": "이승형", "publisher": "한겨레출판", "year": 2026, "price": 15120}, {"rank": 50, "title": "이방인", "author": "알베르 카뮈, 김화영", "publisher": "민음사", "year": 2019, "price": 9000}];
+const format = n => new Intl.NumberFormat('ko-KR').format(n);
+const collator = new Intl.Collator('ko-KR', {numeric:true, sensitivity:'base'});
+const sum = DATA.reduce((s,b)=>s+b.price,0);
+document.getElementById('total').textContent=format(DATA.length);
+document.getElementById('average').textContent=format(Math.round(sum/DATA.length));
+document.getElementById('maximum').textContent=format(Math.max(...DATA.map(b=>b.price)));
+document.getElementById('publishers').textContent=format(new Set(DATA.map(b=>b.publisher)).size);
+
+// 가격 구간은 하한 포함, 상한 미포함으로 정의하여 중복 집계를 방지합니다.
+const bins=[{label:'1만원 미만',min:0,max:10000},{label:'1만~2만원 미만',min:10000,max:20000},{label:'2만~3만원 미만',min:20000,max:30000},{label:'3만~5만원 미만',min:30000,max:50000},{label:'5만원 이상',min:50000,max:Infinity}];
+const priceCounts=bins.map(bin=>DATA.filter(b=>b.price>=bin.min&&b.price<bin.max).length);
+document.getElementById('priceSummary').textContent=bins.map((b,i)=>`${b.label}: ${priceCounts[i]}권`).join(' / ');
+
+// 동률은 최초 등장 순위로 처리하여 상위 8개를 결정합니다.
+const publisherMap=new Map();
+DATA.forEach(b=>{if(!publisherMap.has(b.publisher))publisherMap.set(b.publisher,{name:b.publisher,count:0,first:b.rank});publisherMap.get(b.publisher).count++;});
+const topPublishers=[...publisherMap.values()].sort((a,b)=>b.count-a.count||a.first-b.first).slice(0,8);
+const topTotal=topPublishers.reduce((s,p)=>s+p.count,0);
+const colors=['#1751D0','#E2661E','#0E9E8F','#C08A00','#D95D8F','#2E7D32','#9117D0','#C1232C'];
+const legend=document.getElementById('publisherLegend');
+topPublishers.forEach((p,i)=>{const li=document.createElement('li');const dot=document.createElement('span');dot.className='dot';dot.style.backgroundColor=colors[i];const name=document.createElement('span');name.textContent=p.name;const count=document.createElement('b');count.textContent=`${p.count}권`;li.append(dot,name,count);legend.appendChild(li);});
+document.getElementById('publisherSummary').textContent=`상위 8개 합계 ${topTotal}권 / 전체 ${DATA.length}권 · 나머지 ${DATA.length-topTotal}권 제외. 도넛 비율은 상위 8개 합계 기준입니다.`;
+
+// 검색 결과와 정렬 상태는 통계 데이터와 분리하여 관리합니다.
+let sortKey='rank', sortDirection=1;
+const search=document.getElementById('search');
+const yearFilter=document.getElementById('yearFilter');
+// 데이터에 있는 출간연도를 최신순으로 나열합니다. 빈 값은 전체 연도입니다.
+[...new Set(DATA.map(b=>b.year))].sort((a,b)=>b-a).forEach(year=>{
+ const option=document.createElement('option');option.value=String(year);option.textContent=`${year}년`;yearFilter.appendChild(option);
+});
+function renderTable(){
+ const query=search.value.trim().normalize('NFC').toLocaleLowerCase('ko-KR');
+ // 검색어와 출간연도 조건을 모두 만족하는 도서만 표시합니다.
+ const selectedYear=yearFilter.value;
+ const rows=DATA.filter(b=>(selectedYear===''||b.year===Number(selectedYear))&&[b.title,b.author,b.publisher].some(v=>v.normalize('NFC').toLocaleLowerCase('ko-KR').includes(query)));
+ rows.sort((a,b)=>{const x=a[sortKey],y=b[sortKey];const diff=typeof x==='number'?x-y:collator.compare(x,y);return diff*sortDirection||a.rank-b.rank;});
+ const tbody=document.getElementById('bookRows');tbody.replaceChildren();
+ rows.forEach(b=>{const tr=document.createElement('tr');['rank','title','author','publisher','year','price'].forEach(key=>{const td=document.createElement('td');td.textContent=key==='price'?format(b[key]):b[key];if(key==='rank')td.className='rank';if(key==='year'||key==='price')td.className='number';tr.appendChild(td);});tbody.appendChild(tr);});
+ if(!rows.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=6;td.className='empty';td.textContent='검색 결과가 없습니다. 검색어나 출간연도 조건을 변경해 주세요.';tr.appendChild(td);tbody.appendChild(tr);}
+ document.getElementById('resultCount').textContent=`전체 ${DATA.length}권 중 ${rows.length}권 표시`;
+ document.querySelectorAll('th[data-key]').forEach(th=>{const active=th.dataset.key===sortKey;th.setAttribute('aria-sort',active?(sortDirection===1?'ascending':'descending'):'none');th.querySelector('span').textContent=active?(sortDirection===1?'↑':'↓'):'↕';});
+}
+search.addEventListener('input',renderTable);
+yearFilter.addEventListener('change',renderTable);
+document.querySelectorAll('th[data-key]').forEach(th=>th.querySelector('button').addEventListener('click',()=>{const key=th.dataset.key;sortDirection=sortKey===key?-sortDirection:1;sortKey=key;renderTable();}));
+renderTable();
+
+// CDN이 실패해도 표와 요약 카드는 독립적으로 정상 작동합니다.
+if(typeof Chart==='undefined'){document.getElementById('chartError').hidden=false;}
+else{
+ Chart.defaults.font.family="system-ui, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif";
+ Chart.defaults.color='#505A74';
+ new Chart(document.getElementById('priceChart'),{type:'bar',data:{labels:bins.map(b=>b.label),datasets:[{label:'도서 수',data:priceCounts,backgroundColor:'#1751D0',borderRadius:5,maxBarThickness:65}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`도서 수: ${ctx.parsed.y}권`}}},scales:{x:{grid:{display:false},ticks:{maxRotation:25,minRotation:0}},y:{beginAtZero:true,title:{display:true,text:'도서 수 (권)'},ticks:{stepSize:5,precision:0},grid:{color:'#E2E6F0'},border:{display:false}}}}});
+ new Chart(document.getElementById('publisherChart'),{type:'doughnut',data:{labels:topPublishers.map(p=>p.name),datasets:[{data:topPublishers.map(p=>p.count),backgroundColor:colors,borderColor:'#FDFDFF',borderWidth:3,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.parsed}권 (상위 8개 중 ${(ctx.parsed/topTotal*100).toFixed(1)}%)`}}}}});
+}
+</script>
+</body>
+</html>
